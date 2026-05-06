@@ -166,7 +166,6 @@ export const documentsAPI = {
   // Get download URL for a file (opens in browser)
   // GET /api/documents/<id>/download
   getDownloadUrl: (id, forceDownload = false) => {
-    const token = localStorage.getItem('token');
     // Return the full URL with token as query param for direct browser access
     return `https://smart-dms-backend.onrender.com/api/documents/${id}/download${forceDownload ? '?download=true' : ''}`;
   },
