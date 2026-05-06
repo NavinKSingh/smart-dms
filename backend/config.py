@@ -29,9 +29,15 @@ class Config:
     MYSQL_DB       = os.environ.get("MYSQL_DB", "smart_dms")
 
     SQLALCHEMY_DATABASE_URI = (
-        f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}"
-        f"@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}?ssl=true"
+    f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}"
+    f"@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
     )
+
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {
+            "ssl": {}
+        }
+    }
 
     # Disable modification tracking (saves memory, not needed)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
