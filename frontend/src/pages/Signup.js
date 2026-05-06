@@ -1,11 +1,5 @@
-// Signup.js - Registration Page
-// Features:
-//   - Username, email, password, confirm password fields
-//   - Real-time password strength meter
-//   - Field-level validation
-//   - Show/hide password toggle
-//   - Auto login after successful signup
-//   - Link back to login page
+// Signup.js — Vault DMS · Dark Edition
+// Developed by Navin Kumar Singh · © 2026 Vault DMS
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate, Link }         from 'react-router-dom';
@@ -14,30 +8,637 @@ import { useAuth }                   from '../App';
 import { authAPI }                   from '../api';
 
 // ============================================================
-// PASSWORD STRENGTH CALCULATOR
-// Returns score 0-4 and a label
+// STYLES
 // ============================================================
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── ROOT ── */
+  .sp-root {
+    min-height: 100vh;
+    display: flex;
+    font-family: 'DM Sans', sans-serif;
+    background: #080B10;
+  }
+
+  /* ═══════════════════════════════════════
+     LEFT PANEL — branded visual
+  ═══════════════════════════════════════ */
+  .sp-left {
+    flex: 0 0 48%;
+    background: #080B10;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3rem 3.5rem;
+    border-right: 1px solid rgba(255,255,255,0.045);
+  }
+
+  /* Mesh glows */
+  .sp-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 55% at 10% 100%, rgba(99,102,241,0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 90%  0%,  rgba(56,189,248,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 60% at 50% 50%,  rgba(14, 20, 35, 0.5)  0%, transparent 80%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Dot grid */
+  .sp-left::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .sp-left > * { position: relative; z-index: 1; }
+
+  /* ── LOGO ── */
+  .sp-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .sp-brand-icon {
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, #38BDF8 0%, #6366F1 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 18px rgba(56,189,248,0.35);
+  }
+
+  .sp-brand-icon svg { width: 18px; height: 18px; color: #fff; }
+
+  .sp-brand-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: #E8F0FF;
+    letter-spacing: 0.01em;
+  }
+
+  /* ── HEADLINE ── */
+  .sp-visual {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2.2rem;
+  }
+
+  .sp-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 2.6vw, 2.6rem);
+    line-height: 1.18;
+    color: #E8F0FF;
+    max-width: 360px;
+  }
+
+  .sp-headline em {
+    font-style: italic;
+    background: linear-gradient(90deg, #38BDF8, #818CF8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── FEATURE LIST ── */
+  .sp-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .sp-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 14px 16px;
+    background: rgba(15,22,38,0.7);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .sp-feature:hover {
+    border-color: rgba(56,189,248,0.15);
+    background: rgba(15,22,38,0.9);
+  }
+
+  .sp-feature-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .sp-feature-icon svg { width: 17px; height: 17px; }
+
+  .sp-feature-icon--blue { background: rgba(56,189,248,0.12); color: #7DD3FC; border: 1px solid rgba(56,189,248,0.15); }
+  .sp-feature-icon--violet { background: rgba(99,102,241,0.12); color: #A5B4FC; border: 1px solid rgba(99,102,241,0.15); }
+  .sp-feature-icon--green { background: rgba(34,197,94,0.1); color: #86EFAC; border: 1px solid rgba(34,197,94,0.15); }
+
+  .sp-feature-text h4 {
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: #CBD5E1;
+    margin-bottom: 2px;
+  }
+
+  .sp-feature-text p {
+    font-size: 0.73rem;
+    color: #334155;
+    line-height: 1.4;
+  }
+
+  /* ── STATS ── */
+  .sp-stats {
+    display: flex;
+    gap: 2.2rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .sp-stat-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #334155;
+    margin-bottom: 4px;
+  }
+
+  .sp-stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    background: linear-gradient(90deg, #38BDF8, #818CF8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  /* ── TAGLINE ── */
+  .sp-tagline {
+    font-size: 0.72rem;
+    color: #1E293B;
+    letter-spacing: 0.03em;
+  }
+
+  /* ═══════════════════════════════════════
+     RIGHT PANEL — signup form
+  ═══════════════════════════════════════ */
+  .sp-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2.5rem;
+    background: #0D1117;
+    position: relative;
+    overflow-y: auto;
+  }
+
+  .sp-right::before {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(56,189,248,0.045) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .sp-form-wrap {
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    z-index: 1;
+    animation: sp-slidein 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    padding: 1rem 0;
+  }
+
+  @keyframes sp-slidein {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── FORM HEADER ── */
+  .sp-form-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #38BDF8;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sp-form-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 1.5px;
+    background: #38BDF8;
+    opacity: 0.6;
+  }
+
+  .sp-form-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: #E8F0FF;
+    line-height: 1.15;
+    margin-bottom: 0.45rem;
+  }
+
+  .sp-form-subtitle {
+    font-size: 0.87rem;
+    color: #475569;
+    margin-bottom: 2rem;
+  }
+
+  .sp-form-subtitle a {
+    color: #38BDF8;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .sp-form-subtitle a:hover { color: #7DD3FC; }
+
+  /* ── FIELD GRID ── */
+  .sp-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  @media (max-width: 500px) {
+    .sp-form-row { grid-template-columns: 1fr; }
+  }
+
+  .sp-field { margin-bottom: 1.1rem; }
+
+  .sp-field-label {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #475569;
+    margin-bottom: 7px;
+  }
+
+  .sp-input-wrap { position: relative; }
+
+  .sp-input {
+    width: 100%;
+    padding: 12px 15px;
+    background: #0A0F1A;
+    border: 1.5px solid #1E293B;
+    border-radius: 11px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.93rem;
+    color: #E2E8F0;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .sp-input::placeholder { color: #1E293B; }
+
+  .sp-input:focus {
+    border-color: #38BDF8;
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+  }
+
+  .sp-input--error {
+    border-color: #EF4444;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
+  }
+
+  .sp-input--success {
+    border-color: #22C55E;
+  }
+
+  .sp-input--has-toggle { padding-right: 48px; }
+
+  .sp-toggle-btn {
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+
+  .sp-toggle-btn:hover { color: #94A3B8; }
+  .sp-toggle-btn svg { width: 17px; height: 17px; }
+
+  .sp-field-error {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    font-size: 0.76rem;
+    color: #F87171;
+  }
+
+  .sp-field-hint {
+    margin-top: 5px;
+    font-size: 0.73rem;
+    color: #1E293B;
+  }
+
+  /* ── PASSWORD STRENGTH ── */
+  .sp-strength { margin-top: 8px; }
+
+  .sp-strength-bars {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 5px;
+  }
+
+  .sp-strength-bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: #1E293B;
+    transition: background 0.3s ease;
+  }
+
+  .sp-strength-label {
+    font-size: 0.74rem;
+    font-weight: 600;
+    transition: color 0.3s;
+  }
+
+  /* ── MATCH INDICATOR ── */
+  .sp-match {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 0.76rem;
+    font-weight: 500;
+  }
+
+  /* ── TERMS ── */
+  .sp-terms {
+    font-size: 0.74rem;
+    color: #1E293B;
+    text-align: center;
+    line-height: 1.55;
+    margin-bottom: 1.2rem;
+  }
+
+  .sp-terms span { color: #334155; }
+
+  /* ── SUBMIT ── */
+  .sp-submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.97rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 22px rgba(56,189,248,0.22);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sp-submit-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .sp-submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(56,189,248,0.35);
+  }
+
+  .sp-submit-btn:hover:not(:disabled)::after { opacity: 1; }
+
+  .sp-submit-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 16px rgba(56,189,248,0.2);
+  }
+
+  .sp-submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ── SPINNER ── */
+  .sp-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: sp-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes sp-spin { to { transform: rotate(360deg); } }
+
+  /* ── FOOTER ── */
+  .sp-footer {
+    text-align: center;
+    font-size: 0.87rem;
+    color: #334155;
+    margin-top: 1.4rem;
+  }
+
+  .sp-footer a {
+    color: #38BDF8;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .sp-footer a:hover { color: #7DD3FC; }
+
+  /* ── TRUST STRIP ── */
+  .sp-trust {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1.6rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    flex-wrap: wrap;
+  }
+
+  .sp-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.7rem;
+    color: #1E293B;
+    font-weight: 500;
+  }
+
+  .sp-trust-item svg { width: 12px; height: 12px; color: #334155; }
+
+  /* ═══════════════════════════════════════
+     RESPONSIVE
+  ═══════════════════════════════════════ */
+  @media (max-width: 900px) {
+    .sp-root { flex-direction: column; }
+
+    .sp-left {
+      flex: none;
+      padding: 2rem 1.75rem;
+      min-height: auto;
+      border-right: none;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .sp-headline { font-size: 1.7rem; }
+    .sp-features { display: none; }
+
+    .sp-right { padding: 2.5rem 1.5rem; }
+  }
+`;
+
+// ── Password strength ─────────────────────────────────────────
 const getPasswordStrength = (password) => {
   if (!password) return { score: 0, label: '', color: '' };
 
   let score = 0;
-  if (password.length >= 6)                        score++; // min length
-  if (password.length >= 10)                       score++; // good length
-  if (/[A-Z]/.test(password))                      score++; // has uppercase
-  if (/[0-9]/.test(password))                      score++; // has number
-  if (/[^A-Za-z0-9]/.test(password))              score++; // has special char
+  if (password.length >= 6)           score++;
+  if (password.length >= 10)          score++;
+  if (/[A-Z]/.test(password))         score++;
+  if (/[0-9]/.test(password))         score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
 
   const levels = [
-    { label: '',          color: '#1e293b' },  // 0 - empty
-    { label: 'Weak',      color: '#ef4444' },  // 1 - red
-    { label: 'Fair',      color: '#f59e0b' },  // 2 - amber
-    { label: 'Good',      color: '#3b82f6' },  // 3 - blue
-    { label: 'Strong',    color: '#10b981' },  // 4 - green
-    { label: 'Very Strong', color: '#10b981' },// 5 - green
+    { label: '',           color: '#1E293B' },
+    { label: 'Weak',       color: '#EF4444' },
+    { label: 'Fair',       color: '#F59E0B' },
+    { label: 'Good',       color: '#38BDF8' },
+    { label: 'Strong',     color: '#22C55E' },
+    { label: 'Very Strong',color: '#22C55E' },
   ];
 
   return { score, ...levels[Math.min(score, 5)] };
 };
+
+// ── Icons ─────────────────────────────────────────────────────
+const IconVault = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="3"/>
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M12 9V7M12 17v-2M9 12H7M17 12h-2"/>
+  </svg>
+);
+
+const IconEye = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
+const IconEyeOff = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);
+
+const IconAlert = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+
+const IconShield = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+);
+
+const IconLock = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+);
+
+const IconSearch = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+
+const IconCloud = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 16 12 12 8 16"/>
+    <line x1="12" y1="12" x2="12" y2="21"/>
+    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+  </svg>
+);
+
+const IconShare = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="18" cy="5" r="3"/>
+    <circle cx="6" cy="12" r="3"/>
+    <circle cx="18" cy="19" r="3"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+  </svg>
+);
 
 // ============================================================
 // SIGNUP COMPONENT
@@ -46,83 +647,65 @@ function Signup() {
   const navigate  = useNavigate();
   const { login } = useAuth();
 
-  // Form fields
   const [username,        setUsername]        = useState('');
   const [email,           setEmail]           = useState('');
   const [password,        setPassword]        = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword,    setShowPassword]    = useState(false);
+  const [showConfirm,     setShowConfirm]     = useState(false);
+  const [loading,         setLoading]         = useState(false);
+  const [errors,          setErrors]          = useState({});
 
-  // UI state
-  const [showPassword,        setShowPassword]        = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading,             setLoading]             = useState(false);
-  const [errors,              setErrors]              = useState({});
-
-  // Password strength (computed from password value)
   const strength = useMemo(() => getPasswordStrength(password), [password]);
 
-
   // ----------------------------------------------------------
-  // FORM VALIDATION
+  // VALIDATION
   // ----------------------------------------------------------
   const validate = () => {
-    const newErrors = {};
+    const e = {};
 
-    // Username
     if (!username.trim()) {
-      newErrors.username = 'Username is required';
+      e.username = 'Username is required';
     } else if (username.trim().length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+      e.username = 'Must be at least 3 characters';
     } else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
-      newErrors.username = 'Username can only contain letters, numbers, and underscores';
+      e.username = 'Letters, numbers and underscores only';
     }
 
-    // Email
     if (!email.trim()) {
-      newErrors.email = 'Email is required';
+      e.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email address';
+      e.email = 'Enter a valid email address';
     }
 
-    // Password
     if (!password) {
-      newErrors.password = 'Password is required';
+      e.password = 'Password is required';
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      e.password = 'Minimum 6 characters';
     }
 
-    // Confirm password
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      e.confirmPassword = 'Please confirm your password';
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      e.confirmPassword = 'Passwords do not match';
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-
-  // ----------------------------------------------------------
-  // CLEAR A SINGLE FIELD ERROR WHEN USER TYPES
-  // ----------------------------------------------------------
   const clearError = (field) => {
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
-
   // ----------------------------------------------------------
-  // HANDLE FORM SUBMIT
+  // SUBMIT
   // ----------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validate()) return;
 
     setLoading(true);
-
     try {
       const response = await authAPI.signup(
         username.trim(),
@@ -131,18 +714,14 @@ function Signup() {
       );
 
       const { access_token, user } = response.data;
-
-      // Auto login after signup
       login(access_token, user);
-
-      toast.success(`Account created! Welcome, ${user.username}! 🎉`);
+      toast.success(`Welcome to Vault DMS, ${user.username}! Your vault is ready. 🔐`);
       navigate('/dashboard', { replace: true });
 
     } catch (err) {
       const message = err.response?.data?.error || 'Signup failed. Please try again.';
       toast.error(message);
 
-      // Highlight specific field if backend returns a known conflict
       if (message.toLowerCase().includes('username')) {
         setErrors(prev => ({ ...prev, username: message }));
       } else if (message.toLowerCase().includes('email')) {
@@ -153,532 +732,263 @@ function Signup() {
     }
   };
 
-
   // ============================================================
   // RENDER
   // ============================================================
   return (
     <>
-      <style>{`
-        /* Reuse same base styles as Login page */
-        .auth-page {
-          min-height: 100vh;
-          background: #0f172a;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 2rem 1rem;
-          position: relative;
-          overflow: hidden;
-        }
+      <style>{STYLES}</style>
 
-        .auth-page::before {
-          content: '';
-          position: absolute;
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
-          top: -120px;
-          left: -120px;
-          border-radius: 50%;
-          pointer-events: none;
-        }
+      <div className="sp-root">
 
-        .auth-page::after {
-          content: '';
-          position: absolute;
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
-          bottom: -80px;
-          right: -80px;
-          border-radius: 50%;
-          pointer-events: none;
-        }
+        {/* ═══════════════════════════════════════
+            LEFT — brand / feature panel
+        ═══════════════════════════════════════ */}
+        <div className="sp-left">
 
-        .auth-card {
-          width: 100%;
-          max-width: 460px;
-          background: rgba(15, 23, 42, 0.95);
-          border: 1px solid rgba(99, 102, 241, 0.2);
-          border-radius: 24px;
-          padding: 2.5rem 2rem;
-          position: relative;
-          z-index: 1;
-          box-shadow:
-            0 0 0 1px rgba(99,102,241,0.05),
-            0 20px 60px rgba(0,0,0,0.4),
-            0 0 80px rgba(99,102,241,0.05);
-          animation: authFadeIn 0.5s ease forwards;
-        }
-
-        @keyframes authFadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .auth-header {
-          text-align: center;
-          margin-bottom: 2rem;
-        }
-
-        .auth-logo {
-          width: 56px;
-          height: 56px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.6rem;
-          margin: 0 auto 1.2rem;
-          box-shadow: 0 0 24px rgba(99,102,241,0.4);
-        }
-
-        .auth-title {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.8rem;
-          font-weight: 800;
-          color: #f8fafc;
-          letter-spacing: -0.03em;
-          margin-bottom: 0.4rem;
-        }
-
-        .auth-subtitle {
-          font-family: 'Instrument Sans', sans-serif;
-          font-size: 0.9rem;
-          color: #64748b;
-        }
-
-        .auth-form {
-          display: flex;
-          flex-direction: column;
-          gap: 1.1rem;
-        }
-
-        /* Two columns side by side on wider screens */
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1rem;
-        }
-
-        @media (max-width: 480px) {
-          .form-row {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .form-label {
-          font-family: 'Instrument Sans', sans-serif;
-          font-size: 0.82rem;
-          font-weight: 600;
-          color: #94a3b8;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-        }
-
-        .form-input-wrap {
-          position: relative;
-        }
-
-        .form-input {
-          width: 100%;
-          padding: 12px 16px;
-          background: #0f172a;
-          border: 1px solid #1e293b;
-          border-radius: 12px;
-          color: #f8fafc;
-          font-family: 'Instrument Sans', sans-serif;
-          font-size: 0.95rem;
-          transition: all 0.2s ease;
-          outline: none;
-        }
-
-        .form-input:focus {
-          border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-        }
-
-        .form-input.error {
-          border-color: #ef4444;
-          box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
-        }
-
-        .form-input.success {
-          border-color: #10b981;
-        }
-
-        .form-input::placeholder {
-          color: #334155;
-        }
-
-        .form-input.has-toggle {
-          padding-right: 44px;
-        }
-
-        .password-toggle {
-          position: absolute;
-          right: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          color: #475569;
-          cursor: pointer;
-          font-size: 1rem;
-          padding: 4px;
-          transition: color 0.2s;
-          line-height: 1;
-        }
-
-        .password-toggle:hover {
-          color: #94a3b8;
-        }
-
-        .form-error {
-          font-family: 'Instrument Sans', sans-serif;
-          font-size: 0.78rem;
-          color: #f87171;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .form-hint {
-          font-family: 'Instrument Sans', sans-serif;
-          font-size: 0.75rem;
-          color: #475569;
-        }
-
-        /* ---- PASSWORD STRENGTH METER ---- */
-        .strength-meter {
-          margin-top: 6px;
-        }
-
-        .strength-bars {
-          display: flex;
-          gap: 4px;
-          margin-bottom: 4px;
-        }
-
-        .strength-bar {
-          flex: 1;
-          height: 3px;
-          border-radius: 2px;
-          background: #1e293b;
-          transition: background 0.3s ease;
-        }
-
-        .strength-label {
-          font-family: 'Instrument Sans', sans-serif;
-          font-size: 0.75rem;
-          font-weight: 500;
-          transition: color 0.3s ease;
-        }
-
-        /* ---- SUBMIT BUTTON ---- */
-        .auth-submit-btn {
-          width: 100%;
-          padding: 13px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          border: none;
-          border-radius: 12px;
-          color: #fff;
-          font-family: 'Syne', sans-serif;
-          font-size: 1rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          margin-top: 0.4rem;
-          letter-spacing: 0.02em;
-          box-shadow: 0 4px 20px rgba(99,102,241,0.3);
-        }
-
-        .auth-submit-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 28px rgba(99,102,241,0.45);
-        }
-
-        .auth-submit-btn:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        .btn-spinner {
-          width: 16px;
-          height: 16px;
-          border: 2px solid rgba(255,255,255,0.3);
-          border-top-color: #fff;
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        /* ---- TERMS NOTE ---- */
-        .auth-terms {
-          font-family: 'Instrument Sans', sans-serif;
-          font-size: 0.75rem;
-          color: #334155;
-          text-align: center;
-          line-height: 1.5;
-        }
-
-        /* ---- FOOTER ---- */
-        .auth-footer {
-          text-align: center;
-          font-family: 'Instrument Sans', sans-serif;
-          font-size: 0.88rem;
-          color: #475569;
-          margin-top: 1rem;
-        }
-
-        .auth-footer a {
-          color: #818cf8;
-          text-decoration: none;
-          font-weight: 600;
-          transition: color 0.2s;
-        }
-
-        .auth-footer a:hover {
-          color: #a5b4fc;
-          text-decoration: underline;
-        }
-
-        /* ---- RESPONSIVE ---- */
-        @media (max-width: 480px) {
-          .auth-card {
-            padding: 2rem 1.25rem;
-            border-radius: 20px;
-          }
-          .auth-title {
-            font-size: 1.5rem;
-          }
-        }
-      `}</style>
-
-      <div className="auth-page">
-        <div className="auth-card">
-
-          {/* ---- HEADER ---- */}
-          <div className="auth-header">
-            <div className="auth-logo">📁</div>
-            <h1 className="auth-title">Create account</h1>
-            <p className="auth-subtitle">
-              Join Smart DMS — your secure document hub
-            </p>
+          {/* Logo */}
+          <div className="sp-brand">
+            <div className="sp-brand-icon"><IconVault /></div>
+            <span className="sp-brand-name">Vault DMS</span>
           </div>
 
-          {/* ---- FORM ---- */}
-          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+          {/* Main visual */}
+          <div className="sp-visual">
+            <h2 className="sp-headline">
+              One vault for<br />
+              <em>all your files,<br />forever secure.</em>
+            </h2>
 
-            {/* Username + Email side by side */}
-            <div className="form-row">
-
-              {/* Username */}
-              <div className="form-group">
-                <label className="form-label" htmlFor="username">
-                  Username
-                </label>
-                <input
-                  id="username"
-                  type="text"
-                  className={`form-input ${
-                    errors.username ? 'error' :
-                    username.length >= 3 ? 'success' : ''
-                  }`}
-                  placeholder="john_doe"
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    clearError('username');
-                  }}
-                  autoComplete="username"
-                  autoFocus
-                />
-                {errors.username ? (
-                  <span className="form-error">⚠ {errors.username}</span>
-                ) : (
-                  <span className="form-hint">Letters, numbers, _</span>
-                )}
-              </div>
-
-              {/* Email */}
-              <div className="form-group">
-                <label className="form-label" htmlFor="email">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  className={`form-input ${errors.email ? 'error' : ''}`}
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    clearError('email');
-                  }}
-                  autoComplete="email"
-                />
-                {errors.email && (
-                  <span className="form-error">⚠ {errors.email}</span>
-                )}
-              </div>
-
-            </div>
-
-            {/* Password */}
-            <div className="form-group">
-              <label className="form-label" htmlFor="password">
-                Password
-              </label>
-              <div className="form-input-wrap">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  className={`form-input has-toggle ${errors.password ? 'error' : ''}`}
-                  placeholder="Min. 6 characters"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    clearError('password');
-                  }}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? '🙈' : '👁️'}
-                </button>
-              </div>
-
-              {/* Password strength meter */}
-              {password && (
-                <div className="strength-meter">
-                  <div className="strength-bars">
-                    {[1, 2, 3, 4, 5].map((level) => (
-                      <div
-                        key={level}
-                        className="strength-bar"
-                        style={{
-                          background: strength.score >= level
-                            ? strength.color
-                            : '#1e293b',
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span
-                    className="strength-label"
-                    style={{ color: strength.color }}
-                  >
-                    {strength.label}
-                  </span>
+            {/* Feature cards */}
+            <div className="sp-features">
+              <div className="sp-feature">
+                <div className="sp-feature-icon sp-feature-icon--blue">
+                  <IconCloud />
                 </div>
-              )}
-
-              {errors.password && (
-                <span className="form-error">⚠ {errors.password}</span>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div className="form-group">
-              <label className="form-label" htmlFor="confirmPassword">
-                Confirm Password
-              </label>
-              <div className="form-input-wrap">
-                <input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  className={`form-input has-toggle ${
-                    errors.confirmPassword ? 'error' :
-                    confirmPassword && confirmPassword === password ? 'success' : ''
-                  }`}
-                  placeholder="Repeat your password"
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    clearError('confirmPassword');
-                  }}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? '🙈' : '👁️'}
-                </button>
+                <div className="sp-feature-text">
+                  <h4>Unlimited Cloud Storage</h4>
+                  <p>Store PDFs, Word docs, spreadsheets and more — no size limits.</p>
+                </div>
               </div>
 
-              {/* Live match indicator */}
-              {confirmPassword && !errors.confirmPassword && (
-                <span style={{
-                  fontSize: '0.78rem',
-                  color: confirmPassword === password ? '#10b981' : '#f87171',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}>
-                  {confirmPassword === password ? '✓ Passwords match' : '✗ Passwords do not match'}
-                </span>
-              )}
+              <div className="sp-feature">
+                <div className="sp-feature-icon sp-feature-icon--violet">
+                  <IconSearch />
+                </div>
+                <div className="sp-feature-text">
+                  <h4>Instant Search</h4>
+                  <p>Find any document in seconds with smart full-text search.</p>
+                </div>
+              </div>
 
-              {errors.confirmPassword && (
-                <span className="form-error">⚠ {errors.confirmPassword}</span>
-              )}
+              <div className="sp-feature">
+                <div className="sp-feature-icon sp-feature-icon--green">
+                  <IconShare />
+                </div>
+                <div className="sp-feature-text">
+                  <h4>Easy Sharing & Permissions</h4>
+                  <p>Share files with your team and control who can view or edit.</p>
+                </div>
+              </div>
             </div>
 
-            {/* Terms note */}
-            <p className="auth-terms">
-              By creating an account you agree to our{' '}
-              <span style={{ color: '#475569' }}>Terms of Service</span>
-              {' '}and{' '}
-              <span style={{ color: '#475569' }}>Privacy Policy</span>.
-            </p>
-
-            {/* Submit button */}
-            <button
-              type="submit"
-              className="auth-submit-btn"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <div className="btn-spinner" />
-                  Creating account...
-                </>
-              ) : (
-                '→ Create Account'
-              )}
-            </button>
-
-          </form>
-
-          {/* ---- FOOTER LINK ---- */}
-          <div className="auth-footer">
-            Already have an account?{' '}
-            <Link to="/login">Sign in →</Link>
+            {/* Stats */}
+            <div className="sp-stats">
+              <div>
+                <div className="sp-stat-label">Users</div>
+                <div className="sp-stat-value">5k+</div>
+              </div>
+              <div>
+                <div className="sp-stat-label">Documents</div>
+                <div className="sp-stat-value">12k+</div>
+              </div>
+              <div>
+                <div className="sp-stat-label">Encryption</div>
+                <div className="sp-stat-value">AES‑256</div>
+              </div>
+            </div>
           </div>
 
+          <p className="sp-tagline">
+            © 2026 Vault DMS · Built by Navin Kumar Singh · Enterprise Document Management
+          </p>
         </div>
+
+        {/* ═══════════════════════════════════════
+            RIGHT — signup form
+        ═══════════════════════════════════════ */}
+        <div className="sp-right">
+          <div className="sp-form-wrap">
+
+            <p className="sp-form-eyebrow">Get started free</p>
+            <h1 className="sp-form-title">Create your vault</h1>
+            <p className="sp-form-subtitle">
+              Already have an account?{' '}
+              <Link to="/login">Sign in →</Link>
+            </p>
+
+            <form onSubmit={handleSubmit} noValidate>
+
+              {/* Username + Email row */}
+              <div className="sp-form-row">
+
+                {/* Username */}
+                <div>
+                  <label className="sp-field-label" htmlFor="username">Username</label>
+                  <input
+                    id="username"
+                    type="text"
+                    className={`sp-input${
+                      errors.username ? ' sp-input--error' :
+                      username.length >= 3 ? ' sp-input--success' : ''
+                    }`}
+                    placeholder="john_doe"
+                    value={username}
+                    autoComplete="username"
+                    autoFocus
+                    onChange={(e) => { setUsername(e.target.value); clearError('username'); }}
+                  />
+                  {errors.username ? (
+                    <span className="sp-field-error"><IconAlert /> {errors.username}</span>
+                  ) : (
+                    <span className="sp-field-hint">Letters, numbers, _</span>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="sp-field-label" htmlFor="email">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    className={`sp-input${errors.email ? ' sp-input--error' : ''}`}
+                    placeholder="you@example.com"
+                    value={email}
+                    autoComplete="email"
+                    onChange={(e) => { setEmail(e.target.value); clearError('email'); }}
+                  />
+                  {errors.email && (
+                    <span className="sp-field-error"><IconAlert /> {errors.email}</span>
+                  )}
+                </div>
+
+              </div>
+
+              {/* Password */}
+              <div className="sp-field">
+                <label className="sp-field-label" htmlFor="password">Password</label>
+                <div className="sp-input-wrap">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    className={`sp-input sp-input--has-toggle${errors.password ? ' sp-input--error' : ''}`}
+                    placeholder="Min. 6 characters"
+                    value={password}
+                    autoComplete="new-password"
+                    onChange={(e) => { setPassword(e.target.value); clearError('password'); }}
+                  />
+                  <button
+                    type="button"
+                    className="sp-toggle-btn"
+                    onClick={() => setShowPassword(v => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <IconEyeOff /> : <IconEye />}
+                  </button>
+                </div>
+
+                {password && (
+                  <div className="sp-strength">
+                    <div className="sp-strength-bars">
+                      {[1,2,3,4,5].map(level => (
+                        <div
+                          key={level}
+                          className="sp-strength-bar"
+                          style={{ background: strength.score >= level ? strength.color : '#1E293B' }}
+                        />
+                      ))}
+                    </div>
+                    <span className="sp-strength-label" style={{ color: strength.color }}>
+                      {strength.label}
+                    </span>
+                  </div>
+                )}
+
+                {errors.password && (
+                  <span className="sp-field-error"><IconAlert /> {errors.password}</span>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="sp-field">
+                <label className="sp-field-label" htmlFor="confirmPassword">Confirm Password</label>
+                <div className="sp-input-wrap">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirm ? 'text' : 'password'}
+                    className={`sp-input sp-input--has-toggle${
+                      errors.confirmPassword ? ' sp-input--error' :
+                      confirmPassword && confirmPassword === password ? ' sp-input--success' : ''
+                    }`}
+                    placeholder="Repeat your password"
+                    value={confirmPassword}
+                    autoComplete="new-password"
+                    onChange={(e) => { setConfirmPassword(e.target.value); clearError('confirmPassword'); }}
+                  />
+                  <button
+                    type="button"
+                    className="sp-toggle-btn"
+                    onClick={() => setShowConfirm(v => !v)}
+                    aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirm ? <IconEyeOff /> : <IconEye />}
+                  </button>
+                </div>
+
+                {confirmPassword && !errors.confirmPassword && (
+                  <span className="sp-match" style={{ color: confirmPassword === password ? '#22C55E' : '#F87171' }}>
+                    {confirmPassword === password ? '✓ Passwords match' : '✗ Passwords do not match'}
+                  </span>
+                )}
+
+                {errors.confirmPassword && (
+                  <span className="sp-field-error"><IconAlert /> {errors.confirmPassword}</span>
+                )}
+              </div>
+
+              {/* Terms */}
+              <p className="sp-terms">
+                By creating an account you agree to our{' '}
+                <span>Terms of Service</span> and <span>Privacy Policy</span>.
+              </p>
+
+              {/* Submit */}
+              <button type="submit" className="sp-submit-btn" disabled={loading}>
+                {loading ? (
+                  <><div className="sp-spinner" /> Creating your vault…</>
+                ) : (
+                  'Create My Vault →'
+                )}
+              </button>
+
+            </form>
+
+            {/* Footer link */}
+            <div className="sp-footer">
+              Already have an account?{' '}
+              <Link to="/login">Sign in to your vault →</Link>
+            </div>
+
+            {/* Trust strip */}
+            <div className="sp-trust">
+              <div className="sp-trust-item"><IconShield /> End-to-end encrypted</div>
+              <div className="sp-trust-item"><IconLock /> SOC 2 compliant</div>
+              <div className="sp-trust-item"><IconCloud /> 99.9% uptime</div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </>
   );
