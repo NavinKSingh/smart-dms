@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <!-- ================================================ -->
+    <!-- SEO Meta Tags -->
+    <!-- ================================================ -->
+    <meta
+      name="description"
+      content="Smart Document Management System — Upload, organize, search, and manage your documents securely."
+    />
+    <meta name="keywords" content="document management, file upload, PDF, secure storage" />
+    <meta name="author" content="Smart DMS" />
+
+    <!-- ================================================ -->
+    <!-- Open Graph (for link previews on social media) -->
+    <!-- ================================================ -->
+    <meta property="og:title" content="Smart DMS — Document Management System" />
+    <meta property="og:description" content="Securely upload, organize and manage your documents." />
+    <meta property="og:type" content="website" />
+
+    <!-- ================================================ -->
+    <!-- Favicon — browser tab icon -->
+    <!-- Using an emoji as favicon (no image file needed!) -->
+    <!-- ================================================ -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📁</text></svg>"
+    />
+
+    <!-- ================================================ -->
+    <!-- Google Fonts -->
+    <!-- Syne        → bold display headings (modern, geometric)  -->
+    <!-- Instrument Sans → clean readable body text              -->
+    <!-- ================================================ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- ================================================ -->
+    <!-- Page Title (shown in browser tab) -->
+    <!-- ================================================ -->
+    <title>Smart DMS — Document Management</title>
+
+    <!-- ================================================ -->
+    <!-- Base styles applied BEFORE React loads -->
+    <!-- Prevents white flash on dark backgrounds        -->
+    <!-- ================================================ -->
+    <style>
+      /* Reset default browser margin/padding */
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Dark background shown while React JS loads */
+      html, body {
+        background-color: #0f172a;
+        color: #f8fafc;
+        font-family: 'Instrument Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        min-height: 100vh;
+      }
+
+      /* Root div where React mounts */
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Loading spinner shown BEFORE React hydrates */
+      #initial-loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        gap: 16px;
+        background: #0f172a;
+      }
+
+      #initial-loader .logo {
+        font-size: 3rem;
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      #initial-loader .label {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #64748b;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      #initial-loader .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #1e293b;
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1);    opacity: 1;   }
+        50%       { transform: scale(1.1); opacity: 0.8; }
+      }
+
+      /* Custom scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f172a;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+      }
+
+      /* Remove blue outline on focused elements (we use custom focus styles) */
+      :focus {
+        outline: none;
+      }
+      :focus-visible {
+        outline: 2px solid #6366f1;
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ================================================ -->
+    <!-- NO JAVASCRIPT WARNING                            -->
+    <!-- Shown only if user has JS disabled in browser   -->
+    <!-- ================================================ -->
+    <noscript>
+      <div style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #0f172a;
+        color: #f8fafc;
+        font-family: sans-serif;
+        text-align: center;
+        padding: 2rem;
+      ">
+        <div>
+          <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+          <h2 style="margin-bottom: 0.5rem;">JavaScript Required</h2>
+          <p style="color: #94a3b8;">
+            Smart DMS requires JavaScript to run.<br/>
+            Please enable JavaScript in your browser settings.
+          </p>
+        </div>
+      </div>
+    </noscript>
+
+    <!-- ================================================ -->
+    <!-- INITIAL LOADER                                   -->
+    <!-- Visible while React bundle downloads & mounts   -->
+    <!-- React will replace this once it's ready         -->
+    <!-- ================================================ -->
+    <div id="initial-loader">
+      <div class="logo">📁</div>
+      <div class="label">Smart DMS</div>
+      <div class="spinner"></div>
+    </div>
+
+    <!-- ================================================ -->
+    <!-- REACT ROOT                                       -->
+    <!-- React mounts your entire app inside this div    -->
+    <!-- The initial-loader above is hidden once loaded  -->
+    <!-- ================================================ -->
+    <div id="root"></div>
+
+    <!-- ================================================ -->
+    <!-- Hide the initial loader once React mounts       -->
+    <!-- ================================================ -->
+    <script>
+      // Once the page fully loads, fade out the initial loader
+      window.addEventListener('load', function () {
+        const loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.style.transition = 'opacity 0.3s ease';
+          loader.style.opacity    = '0';
+          setTimeout(() => loader.remove(), 300);
+        }
+      });
+    </script>
+  </body>
+</html>

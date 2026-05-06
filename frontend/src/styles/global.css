@@ -1,0 +1,660 @@
+/* ============================================================
+   global.css - Global Stylesheet for Smart DMS
+   Imported once in index.js — applies to the entire app
+   Contains: resets, CSS variables, typography, utilities,
+             animations, toast overrides, scrollbar, selection
+   ============================================================ */
+
+
+/* ============================================================
+   1. CSS CUSTOM PROPERTIES (Design Tokens)
+   Use these variables everywhere for consistency.
+   To retheme the app, just change values here.
+   ============================================================ */
+:root {
+  /* --- Color Palette --- */
+  --color-bg:           #0f172a;   /* main page background (deep navy) */
+  --color-bg-card:      #0f172a;   /* card background */
+  --color-bg-elevated:  #1e293b;   /* slightly lighter surface */
+  --color-bg-deep:      #060d19;   /* deepest background (modal preview) */
+
+  --color-border:       #1e293b;   /* default border color */
+  --color-border-light: #334155;   /* hovered border color */
+
+  /* --- Text Colors --- */
+  --color-text-primary:   #f8fafc;  /* headings, important text */
+  --color-text-secondary: #cbd5e1;  /* body text */
+  --color-text-muted:     #64748b;  /* labels, placeholders */
+  --color-text-faint:     #334155;  /* very subtle text */
+
+  /* --- Brand / Accent Colors --- */
+  --color-primary:        #6366f1;  /* indigo — primary actions */
+  --color-primary-light:  #818cf8;  /* lighter indigo — links, hover */
+  --color-primary-dark:   #4f46e5;  /* darker indigo — active states */
+  --color-secondary:      #8b5cf6;  /* violet — gradient partner */
+
+  /* --- Semantic Colors --- */
+  --color-success:  #10b981;  /* green — success states */
+  --color-warning:  #f59e0b;  /* amber — warnings */
+  --color-error:    #ef4444;  /* red — errors, delete */
+  --color-info:     #3b82f6;  /* blue — info states */
+
+  /* --- Gradients --- */
+  --gradient-primary:  linear-gradient(135deg, #6366f1, #8b5cf6);
+  --gradient-success:  linear-gradient(135deg, #10b981, #06b6d4);
+  --gradient-warm:     linear-gradient(135deg, #f59e0b, #ef4444);
+
+  /* --- Typography --- */
+  --font-display: 'Syne', sans-serif;           /* headings, logos, labels */
+  --font-body:    'Instrument Sans', sans-serif; /* body, paragraphs, inputs */
+
+  /* --- Spacing Scale --- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* --- Border Radius --- */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+  --radius-full: 9999px;
+
+  /* --- Shadows --- */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.35);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.4);
+  --shadow-xl:  0 20px 60px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 24px rgba(99,102,241,0.35);
+
+  /* --- Transitions --- */
+  --transition-fast:   all 0.15s ease;
+  --transition-normal: all 0.2s ease;
+  --transition-slow:   all 0.35s ease;
+
+  /* --- Z-index layers --- */
+  --z-base:    1;
+  --z-dropdown:  100;
+  --z-sticky:    200;
+  --z-modal:    1000;
+  --z-toast:    9999;
+}
+
+
+/* ============================================================
+   2. GLOBAL RESET
+   Removes inconsistent browser default styles
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Smooth scrolling for anchor links */
+  scroll-behavior: smooth;
+  /* Prevent font size inflation on mobile */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+}
+
+/* Root flex container — makes footer stick to bottom if needed */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* ============================================================
+   3. TYPOGRAPHY
+   ============================================================ */
+
+/* Display / heading font applied to h1–h4 */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+h2 { font-size: clamp(1.3rem, 3vw, 1.8rem); }
+h3 { font-size: clamp(1.1rem, 2.5vw, 1.4rem); }
+h4 { font-size: clamp(1rem, 2vw, 1.1rem); }
+
+p {
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+/* Links */
+a {
+  color: var(--color-primary-light);
+  text-decoration: none;
+  transition: var(--transition-fast);
+}
+
+a:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+
+/* Strong / bold text */
+strong, b {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Inline code */
+code {
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.85em;
+  background: var(--color-bg-elevated);
+  color: var(--color-primary-light);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+/* Small text */
+small {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+
+/* ============================================================
+   4. FORM ELEMENTS
+   Base styles for inputs, buttons, textareas
+   (Component-specific styles are in each component file)
+   ============================================================ */
+
+/* Remove all default button styling */
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Remove default input styling */
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+  font-size: inherit;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+/* Placeholder text color */
+::placeholder {
+  color: var(--color-text-faint);
+  opacity: 1;
+}
+
+/* Remove number input arrows */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Remove autocomplete yellow background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-bg) inset !important;
+  -webkit-text-fill-color: var(--color-text-primary) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+
+/* ============================================================
+   5. SCROLLBAR STYLING
+   Custom thin scrollbar matching the dark theme
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: var(--radius-full);
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--color-bg);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 var(--color-bg);
+}
+
+
+/* ============================================================
+   6. SELECTION STYLING
+   Text selection highlight color
+   ============================================================ */
+::selection {
+  background: rgba(99, 102, 241, 0.35);
+  color: #f8fafc;
+}
+
+::-moz-selection {
+  background: rgba(99, 102, 241, 0.35);
+  color: #f8fafc;
+}
+
+
+/* ============================================================
+   7. FOCUS STYLES
+   Accessible keyboard focus indicator
+   ============================================================ */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+
+/* ============================================================
+   8. IMAGES & MEDIA
+   ============================================================ */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Prevent image dragging */
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+
+/* ============================================================
+   9. UTILITY CLASSES
+   Small reusable helper classes
+   ============================================================ */
+
+/* Flexbox helpers */
+.flex        { display: flex; }
+.flex-col    { display: flex; flex-direction: column; }
+.items-center{ align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1       { gap: var(--space-1); }
+.gap-2       { gap: var(--space-2); }
+.gap-3       { gap: var(--space-3); }
+.gap-4       { gap: var(--space-4); }
+
+/* Text utilities */
+.text-center    { text-align: center; }
+.text-muted     { color: var(--color-text-muted); }
+.text-primary   { color: var(--color-primary-light); }
+.text-success   { color: var(--color-success); }
+.text-error     { color: var(--color-error); }
+.text-sm        { font-size: 0.85rem; }
+.text-xs        { font-size: 0.75rem; }
+.font-display   { font-family: var(--font-display); }
+.font-bold      { font-weight: 700; }
+.truncate       {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Spacing utilities */
+.mt-1  { margin-top: var(--space-1); }
+.mt-2  { margin-top: var(--space-2); }
+.mt-4  { margin-top: var(--space-4); }
+.mb-2  { margin-bottom: var(--space-2); }
+.mb-4  { margin-bottom: var(--space-4); }
+
+/* Visibility */
+.hidden          { display: none !important; }
+.sr-only         {  /* Screen reader only — hidden visually */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Divider line */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-4) 0;
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid currentColor;
+}
+
+/* Card base */
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-6);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+
+/* ============================================================
+   10. GLOBAL ANIMATIONS
+   Reusable keyframe animations
+   ============================================================ */
+
+/* Fade in + slide up (used on page load) */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in only */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Scale in (used for modals, cards) */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Spin (used for loading spinners) */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Pulse (used for loading indicators) */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.97); }
+}
+
+/* Shimmer (used for skeleton loading) */
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* Bounce dots (loading state) */
+@keyframes bounceDot {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%            { transform: scale(1);   opacity: 1;   }
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Animation utility classes */
+.animate-fadeUp    { animation: fadeUp    0.5s ease forwards; }
+.animate-fadeIn    { animation: fadeIn    0.3s ease forwards; }
+.animate-scaleIn   { animation: scaleIn   0.3s ease forwards; }
+.animate-spin      { animation: spin      0.8s linear infinite; }
+.animate-pulse     { animation: pulse     1.5s ease-in-out infinite; }
+.animate-shimmer   { animation: shimmer   1.5s ease-in-out infinite; }
+
+/* Staggered animation delays (for lists) */
+.delay-1  { animation-delay: 0.05s; }
+.delay-2  { animation-delay: 0.10s; }
+.delay-3  { animation-delay: 0.15s; }
+.delay-4  { animation-delay: 0.20s; }
+.delay-5  { animation-delay: 0.25s; }
+
+
+/* ============================================================
+   11. REACT-TOASTIFY OVERRIDES
+   Customise toast notification appearance to match dark theme
+   ============================================================ */
+
+/* Toast container position */
+.Toastify__toast-container {
+  z-index: var(--z-toast) !important;
+}
+
+/* Individual toast */
+.Toastify__toast {
+  background:    #1e293b !important;
+  color:         var(--color-text-primary) !important;
+  border:        1px solid #334155 !important;
+  border-radius: var(--radius-lg) !important;
+  font-family:   var(--font-body) !important;
+  font-size:     0.88rem !important;
+  box-shadow:    var(--shadow-lg) !important;
+  padding:       12px 16px !important;
+  min-height:    unset !important;
+}
+
+/* Toast type borders — left accent color */
+.Toastify__toast--success {
+  border-left: 3px solid var(--color-success) !important;
+}
+
+.Toastify__toast--error {
+  border-left: 3px solid var(--color-error) !important;
+}
+
+.Toastify__toast--warning {
+  border-left: 3px solid var(--color-warning) !important;
+}
+
+.Toastify__toast--info {
+  border-left: 3px solid var(--color-info) !important;
+}
+
+/* Progress bar */
+.Toastify__progress-bar {
+  height: 2px !important;
+}
+
+.Toastify__progress-bar--success {
+  background: var(--color-success) !important;
+}
+
+.Toastify__progress-bar--error {
+  background: var(--color-error) !important;
+}
+
+/* Close button */
+.Toastify__close-button {
+  color: var(--color-text-muted) !important;
+  opacity: 0.7 !important;
+  align-self: center !important;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1 !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Toast icons */
+.Toastify__toast-icon {
+  margin-right: 8px !important;
+}
+
+
+/* ============================================================
+   12. RESPONSIVE BREAKPOINTS
+   Mobile-first base styles with desktop overrides
+   ============================================================ */
+
+/* Extra small — phones (< 480px) */
+@media (max-width: 480px) {
+  html { font-size: 15px; }
+
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+
+  /* Stack any two-column layouts */
+  .two-col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Small — large phones / small tablets (480px–768px) */
+@media (max-width: 768px) {
+  /* Reduce padding on containers */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Toasts take full width on mobile */
+  .Toastify__toast-container {
+    width: 100vw !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding: 0 !important;
+  }
+
+  .Toastify__toast {
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* Medium — tablets (768px–1024px) */
+@media (min-width: 768px) {
+  /* Restore toast styling on tablets */
+  .Toastify__toast-container {
+    width: 380px !important;
+  }
+
+  .Toastify__toast {
+    border-radius: var(--radius-lg) !important;
+  }
+}
+
+
+/* ============================================================
+   13. PRINT STYLES
+   Basic styles for when the user prints the page
+   ============================================================ */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  /* Hide non-essential elements */
+  nav,
+  button,
+  .upload-section,
+  .toolbar,
+  .doc-actions,
+  .modal-overlay {
+    display: none !important;
+  }
+}
+
+
+/* ============================================================
+   14. REDUCED MOTION
+   Respect user's OS preference to reduce animations
+   (accessibility — for users with vestibular disorders)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:   0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration:  0.01ms !important;
+    scroll-behavior:      auto !important;
+  }
+}
