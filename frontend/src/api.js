@@ -12,7 +12,7 @@ import axios from 'axios';
 // but we set it explicitly here for clarity & production use
 // ============================================================
 const api = axios.create({
-  baseURL: 'http://localhost:5000',   // Flask backend URL
+  baseURL: 'https://smart-dms-backend.onrender.com',   // Flask backend URL
 
   // Default headers sent with every request
   headers: {
@@ -168,7 +168,7 @@ export const documentsAPI = {
   getDownloadUrl: (id, forceDownload = false) => {
     const token = localStorage.getItem('token');
     // Return the full URL with token as query param for direct browser access
-    return `http://localhost:5000/api/documents/${id}/download${forceDownload ? '?download=true' : ''}`;
+    return `https://smart-dms-backend.onrender.com/api/documents/${id}/download${forceDownload ? '?download=true' : ''}`;
   },
 
   // Download a file (forces browser download)
