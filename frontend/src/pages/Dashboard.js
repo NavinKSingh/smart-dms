@@ -39,7 +39,16 @@ const PLACEHOLDER_IMAGES = [
   'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=400&q=60',
   'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=400&q=60',
   'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=60',
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=60',
+  'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&q=60',
 ];
+
+// Always pick 4 random placeholders once (stable across re-renders via module-level selection)
+const SLIDESHOW_IMAGES = (() => {
+  const shuffled = [...PLACEHOLDER_IMAGES].sort(() => Math.random() - 0.5).slice(0, 4);
+  // Duplicate for seamless infinite scroll
+  return [...shuffled, ...shuffled];
+})();
 
 function getFolderForType(ft) {
   const f = (ft||'').toLowerCase();
@@ -101,10 +110,13 @@ const STYLES = `
   z-index:200;
   flex-shrink:0;
 }
+
+/* FIX #2: Brand is static, no dropdown, no cursor pointer */
 .vd-navbar-brand{
   display:flex;align-items:center;gap:10px;
-  cursor:pointer;
+  cursor:default;
   position:relative;
+  user-select:none;
 }
 .vd-navbar-brand-icon{
   width:36px;height:36px;
@@ -120,10 +132,15 @@ const STYLES = `
   font-size:1.1rem;color:#E8F0FF;
   letter-spacing:.01em;
 }
-.vd-navbar-brand-dropdown{
+
+/* FIX #3: Profile dropdown styles (moved to avatar) */
+.vd-avatar-wrap{
+  position:relative;
+}
+.vd-avatar-dropdown{
   position:absolute;
   top:calc(100% + 10px);
-  left:0;
+  right:0;
   background:#0D1117;
   border:1px solid #1E293B;
   border-radius:14px;
@@ -133,15 +150,15 @@ const STYLES = `
   animation:vd-dropdown .2s both;
   z-index:300;
 }
-.vd-navbar-brand-dropdown-header{
+.vd-avatar-dropdown-header{
   padding:.6rem .9rem .5rem;
   border-bottom:1px solid #1E293B;
   margin-bottom:.4rem;
 }
-.vd-navbar-brand-dropdown-user{
+.vd-avatar-dropdown-user{
   font-size:.85rem;font-weight:600;color:#CBD5E1;
 }
-.vd-navbar-brand-dropdown-email{font-size:.73rem;color:#334155;margin-top:2px;}
+.vd-avatar-dropdown-email{font-size:.73rem;color:#334155;margin-top:2px;}
 .vd-dropdown-item{
   display:flex;align-items:center;gap:10px;
   padding:.65rem .9rem;border-radius:9px;
@@ -152,19 +169,22 @@ const STYLES = `
 .vd-dropdown-item.danger:hover{background:rgba(239,68,68,.08);color:#F87171;}
 .vd-dropdown-item svg{width:15px;height:15px;flex-shrink:0;}
 
-.vd-navbar-right{display:flex;align-items:center;gap:10px;}
+/* FIX #4: Search moved left with more gap, wider */
+.vd-navbar-right{display:flex;align-items:center;gap:16px;}
 .vd-navbar-search{
   display:flex;align-items:center;gap:8px;
   background:#161C2A;
   border:1px solid #1E293B;
   border-radius:10px;
-  padding:6px 12px;
+  padding:6px 14px;
   cursor:pointer;
   transition:border-color .2s,background .2s;
   font-size:.82rem;color:#475569;
+  width:260px;
 }
 .vd-navbar-search:hover{border-color:#334155;background:#1E293B;}
-.vd-navbar-search svg{width:14px;height:14px;}
+.vd-navbar-search svg{width:14px;height:14px;flex-shrink:0;}
+.vd-navbar-search-text{flex:1;}
 .vd-navbar-search-kbd{
   background:#1E293B;
   border-radius:4px;
@@ -173,6 +193,7 @@ const STYLES = `
   color:#334155;
   font-family:monospace;
   border:1px solid #263346;
+  flex-shrink:0;
 }
 .vd-avatar{
   width:32px;height:32px;border-radius:50%;
@@ -398,6 +419,7 @@ const STYLES = `
   height:100%;width:280px;object-fit:cover;
   flex-shrink:0;margin-right:8px;border-radius:12px;
   cursor:pointer;transition:opacity .2s;
+  background:#0D1117;
 }
 .vd-slideshow-img:hover{opacity:.85;}
 .vd-slideshow-empty{
@@ -690,21 +712,61 @@ const STYLES = `
 .vd-viewer-btn.del:hover{background:rgba(239,68,68,.08);border-color:#EF4444;}
 
 .vd-viewer-body{flex:1;padding:2rem;display:flex;gap:1.5rem;flex-wrap:wrap;}
+
 .vd-viewer-preview{
   flex:1;min-width:300px;
   background:#0A0F1A;border:1px solid #1E293B;
   border-radius:16px;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
-  min-height:400px;position:relative;
+  min-height:500px;position:relative;
 }
-.vd-viewer-img{max-width:100%;max-height:600px;object-fit:contain;border-radius:12px;}
-.vd-viewer-pdf{width:100%;height:600px;border:none;background:#060D19;}
+
+.vd-viewer-img{
+  max-width:100%;
+  max-height:70vh;
+  object-fit:contain;
+  border-radius:8px;
+  display:block;
+}
+
+.vd-viewer-pdf{
+  width:100%;
+  height:70vh;
+  min-height:500px;
+  border:none;
+  background:#060D19;
+  display:block;
+}
+
+.vd-viewer-text-content{
+  width:100%;
+  height:70vh;
+  overflow:auto;
+  padding:1.5rem;
+  font-family:'DM Mono','Fira Code',monospace;
+  font-size:.82rem;
+  line-height:1.7;
+  color:#94A3B8;
+  white-space:pre-wrap;
+  word-break:break-word;
+  background:#060D19;
+  border-radius:0;
+}
+
 .vd-viewer-no-preview{
   text-align:center;padding:3rem;
+  display:flex;flex-direction:column;align-items:center;gap:1rem;
 }
-.vd-viewer-no-preview .ico{font-size:3.5rem;display:block;margin-bottom:1rem;}
+.vd-viewer-no-preview .ico{font-size:3.5rem;display:block;}
 .vd-viewer-no-preview-type{font-weight:700;font-size:1.1rem;margin-bottom:.3rem;}
 .vd-viewer-no-preview-hint{font-size:.83rem;color:#475569;}
+
+.vd-viewer-loading{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.8rem;color:#334155;font-size:.82rem;
+  width:100%;height:100%;min-height:300px;
+}
+
 .vd-viewer-sidebar{
   width:280px;flex-shrink:0;
   display:flex;flex-direction:column;gap:1rem;
@@ -807,6 +869,7 @@ const STYLES = `
   .vd-stats{grid-template-columns:repeat(2,1fr);}
   .vd-viewer-body{flex-direction:column;}
   .vd-viewer-topbar{padding:.8rem 1rem;}
+  .vd-navbar-search{width:160px;}
 }
 `;
 
@@ -827,6 +890,157 @@ const IcoDownload = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 const IcoCamera   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>;
 
 // ─────────────────────────────────────────────────────────────
+// FILE CONTENT VIEWER COMPONENT
+// All hooks declared at top — no hooks after any return
+// PDF: authenticated fetch → blob → object URL
+// ─────────────────────────────────────────────────────────────
+function FilePreview({ doc }) {
+  // ── ALL HOOKS FIRST — before any conditional return ──────
+  const [pdfUrl,      setPdfUrl]      = useState(null);
+  const [pdfLoading,  setPdfLoading]  = useState(false);
+  const [pdfError,    setPdfError]    = useState(false);
+  const [textContent, setTextContent] = useState(null);
+  const [loadingText, setLoadingText] = useState(false);
+  const [imgError,    setImgError]    = useState(false);
+
+  const ft      = (doc.file_type || '').toLowerCase();
+  const isImg   = isImage(ft);
+  const isPdf   = ft === 'pdf';
+  const isText  = ['txt', 'md', 'rtf', 'csv'].includes(ft);
+  const prevUrl = buildDownloadUrl(doc.id);
+
+  // Authenticated PDF fetch → blob object URL
+  useEffect(() => {
+    if (!isPdf) return;
+    let objectUrl = null;
+    setPdfLoading(true);
+    setPdfError(false);
+    setPdfUrl(null);
+
+    const token = localStorage.getItem('token');
+    fetch(prevUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.blob();
+      })
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        setPdfUrl(objectUrl);
+        setPdfLoading(false);
+      })
+      .catch(() => {
+        setPdfError(true);
+        setPdfLoading(false);
+      });
+
+    // Revoke the blob URL when component unmounts or doc changes
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [prevUrl, isPdf]);
+
+  // Text file fetch
+  useEffect(() => {
+    if (!isText) return;
+    setLoadingText(true);
+    const token = localStorage.getItem('token');
+    fetch(prevUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.text())
+      .then((t) => { setTextContent(t); setLoadingText(false); })
+      .catch(() => { setTextContent(null); setLoadingText(false); });
+  }, [prevUrl, isText]);
+
+  // ── CONDITIONAL RENDERS (hooks already declared above) ───
+
+  if (isImg) {
+    return imgError ? (
+      <div className="vd-viewer-no-preview">
+        <span className="ico">🖼️</span>
+        <div className="vd-viewer-no-preview-type" style={{ color: typeColor(ft) }}>Image</div>
+        <div className="vd-viewer-no-preview-hint">
+          Could not load image preview.<br />Try downloading the file.
+        </div>
+      </div>
+    ) : (
+      <img
+        src={prevUrl}
+        alt={doc.original_name}
+        className="vd-viewer-img"
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  if (isPdf) {
+    if (pdfLoading) {
+      return (
+        <div className="vd-viewer-loading">
+          <div className="vd-spinner-dark" style={{ width: 24, height: 24, borderWidth: 3 }} />
+          <span>Loading PDF…</span>
+        </div>
+      );
+    }
+    if (pdfError) {
+      return (
+        <div className="vd-viewer-no-preview">
+          <span className="ico">📕</span>
+          <div className="vd-viewer-no-preview-type" style={{ color: typeColor(ft) }}>PDF</div>
+          <div className="vd-viewer-no-preview-hint">
+            Could not load PDF preview.<br />
+            Use the <strong style={{ color: '#38BDF8' }}>Download</strong> button to open it.
+          </div>
+        </div>
+      );
+    }
+    return pdfUrl ? (
+      <iframe
+        src={pdfUrl}
+        className="vd-viewer-pdf"
+        title={doc.original_name}
+        allow="fullscreen"
+      />
+    ) : (
+      <div className="vd-viewer-loading">
+        <div className="vd-spinner-dark" style={{ width: 24, height: 24, borderWidth: 3 }} />
+        <span>Loading PDF…</span>
+      </div>
+    );
+  }
+
+  if (isText) {
+    if (loadingText) {
+      return (
+        <div className="vd-viewer-loading">
+          <div className="vd-spinner-dark" style={{ width: 24, height: 24, borderWidth: 3 }} />
+          <span>Loading file…</span>
+        </div>
+      );
+    }
+    if (textContent !== null) {
+      return <pre className="vd-viewer-text-content">{textContent}</pre>;
+    }
+  }
+
+  // Unsupported — show fallback with download nudge
+  return (
+    <div className="vd-viewer-no-preview">
+      <span className="ico">📄</span>
+      <div className="vd-viewer-no-preview-type" style={{ color: typeColor(ft) }}>{typeLabel(ft)} File</div>
+      <div className="vd-viewer-no-preview-hint">
+        In-browser preview not available for this file type.<br />
+        Use the <strong style={{ color: '#38BDF8' }}>Download</strong> button to open it on your device.
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────
 function Dashboard() {
@@ -844,8 +1058,8 @@ function Dashboard() {
   const [uploadPct,     setUploadPct]     = useState(0);
 
   // Navigation
-  const [sidebarActive, setSidebarActive] = useState('upload');  // 'upload'|'recent'|'favourites'|'shared'|'bin'|folder-id
-  const [viewerDoc,     setViewerDoc]     = useState(null);      // null = page1, doc = page2
+  const [sidebarActive, setSidebarActive] = useState('upload');
+  const [viewerDoc,     setViewerDoc]     = useState(null);
 
   // Search overlay
   const [searchOpen,    setSearchOpen]    = useState(false);
@@ -854,9 +1068,8 @@ function Dashboard() {
   const [searchLoading, setSearchLoading] = useState(false);
   const searchTimeout   = useRef(null);
 
-  // Navbar brand dropdown
-  const [brandOpen,     setBrandOpen]     = useState(false);
-  const brandRef        = useRef(null);
+  const [avatarOpen,    setAvatarOpen]    = useState(false);
+  const avatarRef       = useRef(null);
 
   // Profile edit modal
   const [profileOpen,   setProfileOpen]   = useState(false);
@@ -879,15 +1092,15 @@ function Dashboard() {
   useEffect(() => {
     const h = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(v => !v); }
-      if (e.key === 'Escape') { setSearchOpen(false); setBrandOpen(false); }
+      if (e.key === 'Escape') { setSearchOpen(false); setAvatarOpen(false); }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, []);
 
-  // ── Close brand dropdown on outside click ───────────────
+  // Close avatar dropdown on outside click
   useEffect(() => {
-    const h = (e) => { if (brandRef.current && !brandRef.current.contains(e.target)) setBrandOpen(false); };
+    const h = (e) => { if (avatarRef.current && !avatarRef.current.contains(e.target)) setAvatarOpen(false); };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
@@ -1041,7 +1254,7 @@ function Dashboard() {
   const imageDocs  = useMemo(() => documents.filter(d => isImage(d.file_type)), [documents]);
   const recentDocs = useMemo(() => [...documents].sort((a,b) => new Date(b.uploaded_at)-new Date(a.uploaded_at)).slice(0,8), [documents]);
   const favDocs    = useMemo(() => documents.filter(d => favourites.includes(d.id)), [documents, favourites]);
-  const sharedDocs = useMemo(() => documents.slice(0, Math.min(4, documents.length)), [documents]); // demo
+  const sharedDocs = useMemo(() => documents.slice(0, Math.min(4, documents.length)), [documents]);
 
   const folderCounts = useMemo(() => {
     const c = {};
@@ -1049,11 +1262,6 @@ function Dashboard() {
     documents.forEach(d => { const fid = getFolderForType(d.file_type); c[fid] = (c[fid]||0)+1; });
     return c;
   }, [documents]);
-
-  const slideshowImages = imageDocs.length >= 4 ? imageDocs : null; // null → use placeholders
-  const slideItems = slideshowImages
-    ? [...slideshowImages, ...slideshowImages]
-    : [...PLACEHOLDER_IMAGES, ...PLACEHOLDER_IMAGES];
 
   const initials = (profileName || user?.username || 'U').slice(0,2).toUpperCase();
 
@@ -1072,30 +1280,24 @@ function Dashboard() {
   // ── PAGE 2 — FILE VIEWER ─────────────────────────────────
   // ─────────────────────────────────────────────────────────
   if (viewerDoc) {
-    const doc    = viewerDoc;
-    const tc     = typeColor(doc.file_type);
-    const isImg  = isImage(doc.file_type);
-    const isPdf  = doc.file_type?.toLowerCase() === 'pdf';
-    const isFav  = favourites.includes(doc.id);
-    const prevUrl = buildDownloadUrl(doc.id);
-    const date   = (() => { try { return format(new Date(doc.uploaded_at), 'MMM d, yyyy · h:mm a'); } catch { return ''; } })();
+    const doc   = viewerDoc;
+    const tc    = typeColor(doc.file_type);
+    const isFav = favourites.includes(doc.id);
+    const date  = (() => { try { return format(new Date(doc.uploaded_at), 'MMM d, yyyy · h:mm a'); } catch { return ''; } })();
 
     return (
       <>
         <style>{STYLES}</style>
         <div className="vd-app">
-          {/* Navbar */}
           <NavbarShell
             user={user} profileImg={profileImg} initials={initials}
-            brandOpen={brandOpen} setBrandOpen={setBrandOpen} brandRef={brandRef}
+            avatarOpen={avatarOpen} setAvatarOpen={setAvatarOpen} avatarRef={avatarRef}
             onSearch={() => setSearchOpen(true)}
-            onEditProfile={() => { setBrandOpen(false); setProfileOpen(true); }}
-            onLogout={() => { setBrandOpen(false); logout?.(); }}
+            onEditProfile={() => { setAvatarOpen(false); setProfileOpen(true); }}
+            onLogout={() => { setAvatarOpen(false); logout?.(); }}
           />
 
-          {/* Viewer */}
           <div className="vd-viewer">
-            {/* Top bar */}
             <div className="vd-viewer-topbar">
               <button className="vd-viewer-back" onClick={() => setViewerDoc(null)}>
                 <IcoBack /> Back
@@ -1117,22 +1319,11 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Body */}
             <div className="vd-viewer-body">
-              {/* Preview area */}
               <div className="vd-viewer-preview">
-                {isImg && <img src={prevUrl} alt={doc.original_name} className="vd-viewer-img" onError={e=>{e.target.style.display='none';}} />}
-                {isPdf && <iframe src={`${prevUrl}#toolbar=0`} className="vd-viewer-pdf" title={doc.original_name} />}
-                {!isImg && !isPdf && (
-                  <div className="vd-viewer-no-preview">
-                    <span className="ico">📄</span>
-                    <div className="vd-viewer-no-preview-type" style={{color:tc}}>{typeLabel(doc.file_type)} File</div>
-                    <div className="vd-viewer-no-preview-hint">In-browser preview not available.<br/>Download to open on your device.</div>
-                  </div>
-                )}
+                <FilePreview doc={doc} />
               </div>
 
-              {/* Meta sidebar */}
               <div className="vd-viewer-sidebar">
                 <div className="vd-viewer-meta-card">
                   <div className="vd-viewer-meta-title">File Details</div>
@@ -1154,7 +1345,6 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Profile modal */}
         {profileOpen && (
           <ProfileModal
             initials={initials} profileImg={profileImg} profileImgRef={profileImgRef}
@@ -1179,10 +1369,10 @@ function Dashboard() {
         {/* ── NAVBAR ── */}
         <NavbarShell
           user={user} profileImg={profileImg} initials={initials}
-          brandOpen={brandOpen} setBrandOpen={setBrandOpen} brandRef={brandRef}
+          avatarOpen={avatarOpen} setAvatarOpen={setAvatarOpen} avatarRef={avatarRef}
           onSearch={() => setSearchOpen(true)}
-          onEditProfile={() => { setBrandOpen(false); setProfileOpen(true); }}
-          onLogout={() => { setBrandOpen(false); logout?.(); }}
+          onEditProfile={() => { setAvatarOpen(false); setProfileOpen(true); }}
+          onLogout={() => { setAvatarOpen(false); logout?.(); }}
         />
 
         {/* ── LAYOUT ── */}
@@ -1229,7 +1419,6 @@ function Dashboard() {
               {/* ════ UPLOAD PAGE ════ */}
               {sidebarActive === 'upload' && (
                 <>
-                  {/* Header */}
                   <div className="vd-page-header">
                     <div>
                       <h1 className="vd-page-title">Welcome back, <em>{profileName || user?.username}</em></h1>
@@ -1237,7 +1426,6 @@ function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Stats */}
                   <div className="vd-stats">
                     <StatCard icon="📂" val={stats?.total_files??'—'} lbl="Total Files" glow="linear-gradient(90deg,#38BDF8,#6366F1)" />
                     <StatCard icon="💾" val={stats?`${stats.total_size_mb} MB`:'—'} lbl="Storage Used" glow="linear-gradient(90deg,#10B981,#06B6D4)" />
@@ -1245,27 +1433,25 @@ function Dashboard() {
                     <StatCard icon="⭐" val={favDocs.length} lbl="Favourites" glow="linear-gradient(90deg,#8B5CF6,#EC4899)" />
                   </div>
 
-                  {/* Slideshow */}
+                  {/* ── SLIDESHOW — always 4 random Unsplash images, never user gallery ── */}
                   <div className="vd-slideshow-wrap">
-                    <div className="vd-section-label">Memory Gallery {imageDocs.length < 4 && <span style={{color:'#1E293B',fontWeight:400,textTransform:'none',fontSize:'.65rem'}}>(showing sample · upload 4+ images to see yours)</span>}</div>
+                    <div className="vd-section-label">Memory Gallery</div>
                     <div className="vd-slideshow">
                       <div className="vd-slideshow-overlay" />
                       <div className="vd-slideshow-track">
-                        {slideItems.map((item, i) => {
-                          const isDocObj = typeof item === 'object' && item.id;
-                          return isDocObj ? (
-                            <img key={`${item.id}-${i}`} src={buildDownloadUrl(item.id)}
-                              alt={item.original_name} className="vd-slideshow-img"
-                              onClick={() => setViewerDoc(item)}
-                              onError={e => { e.target.style.display='none'; }} />
-                          ) : (
-                            <img key={i} src={item} alt="gallery" className="vd-slideshow-img" />
-                          );
-                        })}
+                        {SLIDESHOW_IMAGES.map((url, i) => (
+                          <img
+                            key={`slide-${i}`}
+                            src={url}
+                            alt="gallery"
+                            className="vd-slideshow-img"
+                            onError={e => { e.target.style.display = 'none'; }}
+                          />
+                        ))}
                       </div>
                       <div className="vd-slideshow-badge">
                         <div className="vd-slideshow-dot" />
-                        {imageDocs.length >= 4 ? `${imageDocs.length} photos in vault` : 'Sample gallery'}
+                        Gallery
                       </div>
                     </div>
                   </div>
@@ -1508,41 +1694,42 @@ function Dashboard() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// NAVBAR SHELL (shared between page1 + page2)
+// NAVBAR SHELL
 // ─────────────────────────────────────────────────────────────
-function NavbarShell({ user, profileImg, initials, brandOpen, setBrandOpen, brandRef, onSearch, onEditProfile, onLogout }) {
+function NavbarShell({ user, profileImg, initials, avatarOpen, setAvatarOpen, avatarRef, onSearch, onEditProfile, onLogout }) {
   return (
     <nav className="vd-navbar">
-      {/* LeetCode-style brand button */}
-      <div className="vd-navbar-brand" ref={brandRef} onClick={()=>setBrandOpen(v=>!v)}>
+      <div className="vd-navbar-brand">
         <div className="vd-navbar-brand-icon"><IcoVault /></div>
         <span className="vd-navbar-brand-name">Vault DMS</span>
-
-        {brandOpen && (
-          <div className="vd-navbar-brand-dropdown" onClick={e=>e.stopPropagation()}>
-            <div className="vd-navbar-brand-dropdown-header">
-              <div className="vd-navbar-brand-dropdown-user">{user?.username}</div>
-              <div className="vd-navbar-brand-dropdown-email">{user?.email}</div>
-            </div>
-            <div className="vd-dropdown-item" onClick={onEditProfile}>
-              <IcoUser /> Edit Profile
-            </div>
-            <div className="vd-dropdown-item danger" onClick={onLogout}>
-              <IcoLogout /> Sign Out
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Right side: search + avatar */}
       <div className="vd-navbar-right">
         <div className="vd-navbar-search" onClick={onSearch}>
           <IcoSearch />
-          <span>Search…</span>
+          <span className="vd-navbar-search-text">Search documents…</span>
           <span className="vd-navbar-search-kbd">Ctrl K</span>
         </div>
-        <div className="vd-avatar" onClick={onSearch}>
-          {profileImg ? <img src={profileImg} alt="avatar" /> : initials}
+
+        <div className="vd-avatar-wrap" ref={avatarRef}>
+          <div className="vd-avatar" onClick={() => setAvatarOpen(v => !v)}>
+            {profileImg ? <img src={profileImg} alt="avatar" /> : initials}
+          </div>
+
+          {avatarOpen && (
+            <div className="vd-avatar-dropdown" onClick={e => e.stopPropagation()}>
+              <div className="vd-avatar-dropdown-header">
+                <div className="vd-avatar-dropdown-user">{user?.username}</div>
+                <div className="vd-avatar-dropdown-email">{user?.email}</div>
+              </div>
+              <div className="vd-dropdown-item" onClick={onEditProfile}>
+                <IcoUser /> Edit Profile
+              </div>
+              <div className="vd-dropdown-item danger" onClick={onLogout}>
+                <IcoLogout /> Sign Out
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </nav>

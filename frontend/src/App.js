@@ -95,9 +95,12 @@ function AuthProvider({ children }) {
   // Clears everything and redirects to login
   // ----------------------------------------------------------
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+
+  setUser(null);
+
+  window.location.href = '/login';
   };
 
 
