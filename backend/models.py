@@ -56,7 +56,9 @@ class User(db.Model):
 # ============================================================
 # DOCUMENT TABLE
 # Stores metadata about each uploaded file
-# (The actual file is saved on disk in /uploads folder)
+# The actual file bytes are stored in file_data (DB-backed, persists
+# across Render restarts) — the /uploads folder copy is temporary
+# and only used as a scratch file during the request.
 # ============================================================
 class Document(db.Model):
     __tablename__ = "documents"  # actual table name in MySQL
@@ -75,6 +77,10 @@ class Document(db.Model):
 
     # File size in bytes
     file_size     = db.Column(db.Integer,     nullable=False)
+
+    # Actual file bytes, stored in the DB (LONGBLOB) so downloads survive
+    # Render's ephemeral disk. Nullable so old rows without data don't break.
+    file_data     = db.Column(db.LargeBinary(length=(2**32) - 1), nullable=True)
 
     # Optional description the user can provide
     description   = db.Column(db.String(500), nullable=True)

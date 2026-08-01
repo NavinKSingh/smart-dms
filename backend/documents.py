@@ -3,9 +3,10 @@
 # All routes here start with /api/documents/...
 
 import os
+import io
 import uuid                          # generates unique filenames
 from flask import (
-    Blueprint, request, jsonify,
+    Blueprint, request, jsonify, send_file,
     send_from_directory, current_app  # current_app gives access to app config
 )
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -62,22 +63,28 @@ def upload_file():
     upload_folder = current_app.config["UPLOAD_FOLDER"]
     os.makedirs(upload_folder, exist_ok=True)
 
-    # --- Save the file to disk ---
+    # --- Save the file to disk (temporary scratch copy — Render's disk ---
+    # --- is wiped on restart/redeploy, so this is NOT the source of truth) ---
     file_path = os.path.join(upload_folder, unique_name)
     file.save(file_path)
 
     # --- Get file size in bytes ---
     file_size = os.path.getsize(file_path)
 
+    # --- Read the file bytes so we can store them in the DB (persistent) ---
+    with open(file_path, "rb") as f:
+        file_binary = f.read()
+
     # --- Optional description from form data ---
     description = request.form.get("description", "").strip()
 
-    # --- Save file metadata to the database ---
+    # --- Save file metadata + binary data to the database ---
     new_doc = Document(
         original_name = original_name,
         stored_name   = unique_name,
         file_type     = extension,
         file_size     = file_size,
+        file_data     = file_binary,   # ← actual bytes, survives disk wipes
         description   = description if description else None,
         user_id       = int(user_id)
     )
@@ -191,23 +198,32 @@ def download_file(doc_id):
     if not doc:
         return jsonify({"error": "Document not found"}), 404
 
-    upload_folder = current_app.config["UPLOAD_FOLDER"]
-
-    # Check the file actually exists on disk
-    file_path = os.path.join(upload_folder, doc.stored_name)
-    if not os.path.exists(file_path):
-        return jsonify({"error": "File not found on server"}), 404
-
     # as_attachment=False → opens in browser (for preview)
     # as_attachment=True  → forces download
     as_attachment = request.args.get("download", "false").lower() == "true"
 
-    return send_from_directory(
-        upload_folder,
-        doc.stored_name,
-        as_attachment   = as_attachment,
-        download_name   = doc.original_name  # use original name when downloading
-    )
+    # --- Primary path: serve straight from the DB blob (survives restarts) ---
+    if doc.file_data:
+        return send_file(
+            io.BytesIO(doc.file_data),
+            mimetype        = "application/octet-stream",
+            as_attachment   = as_attachment,
+            download_name   = doc.original_name
+        )
+
+    # --- Fallback: old documents uploaded before this change may only ---
+    # --- exist on disk. If the disk still has them (no restart yet), serve. ---
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    file_path = os.path.join(upload_folder, doc.stored_name)
+    if os.path.exists(file_path):
+        return send_from_directory(
+            upload_folder,
+            doc.stored_name,
+            as_attachment   = as_attachment,
+            download_name   = doc.original_name
+        )
+
+    return jsonify({"error": "File not found on server"}), 404
 
 
 # ============================================================
@@ -226,14 +242,14 @@ def delete_document(doc_id):
     if not doc:
         return jsonify({"error": "Document not found"}), 404
 
-    # --- Delete the actual file from disk ---
+    # --- Delete the actual file from disk (if it's still there) ---
     upload_folder = current_app.config["UPLOAD_FOLDER"]
     file_path     = os.path.join(upload_folder, doc.stored_name)
 
     if os.path.exists(file_path):
         os.remove(file_path)  # delete from disk
 
-    # --- Delete the record from the database ---
+    # --- Delete the record from the database (this also removes file_data) ---
     db.session.delete(doc)
     db.session.commit()
 

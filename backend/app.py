@@ -61,6 +61,22 @@ def create_app():
         db.create_all()
         print("✅ Database tables created/verified successfully!")
 
+        # --- Add file_data column if it doesn't exist yet (safe migration) ---
+        # db.create_all() only creates missing TABLES, it won't ALTER an
+        # existing table to add a new column — so we do that manually here.
+        # Safe to run on every startup: after the first successful run,
+        # this will just fail harmlessly with "column already exists".
+        from sqlalchemy import text
+        try:
+            db.session.execute(text(
+                "ALTER TABLE documents ADD COLUMN file_data LONGBLOB"
+            ))
+            db.session.commit()
+            print("✅ Added file_data column to documents table")
+        except Exception as e:
+            db.session.rollback()
+            print(f"ℹ️ file_data column already exists or skipped: {e}")
+
         # Create uploads folder if it doesn't exist
         os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
         print(f"✅ Upload folder ready at: {app.config['UPLOAD_FOLDER']}")
